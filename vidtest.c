@@ -56,7 +56,7 @@ static retro_log_printf_t log_cb;
 #if 1 /* our gui code */
 static void retro_run_gui(struct nk_context *ctx)
 {
-	if (nk_begin(ctx, "", nk_rect(10, 10, 500, 330), NK_WINDOW_NO_SCROLLBAR))
+	if (nk_begin(ctx, "", nk_rect(10, 10, 500, (float)(av.geometry.base_height - 20)), NK_WINDOW_SCROLL_AUTO_HIDE))
 	{
 		enum EParDar { OP_PAR, OP_DAR };
 		static int prop_width, prop_height, prop_pardar;
@@ -71,7 +71,7 @@ static void retro_run_gui(struct nk_context *ctx)
 			prop_sample_rate = av.timing.sample_rate;
 		}
 
-		static const float ratio1[] = {460.f}, ratio2big[] = {100.f,350.f}, ratio2[] = {160.f, 290.f}, ratio3[] = {50.f, 200.f, 200.f};
+		static const float ratio1[] = {460.f}, ratio2big[] = {100.f,350.f}, ratio2[] = {160.f, 290.f}, ratio2small[] = {290.f, 160.f}, ratio3[] = {50.f, 200.f, 200.f};
 		if (nk_tree_push(ctx, NK_TREE_TAB, "Input", NK_MAXIMIZED))
 		{
 			nk_layout_row(ctx, NK_STATIC, 25, 2, ratio2big);
@@ -80,7 +80,6 @@ static void retro_run_gui(struct nk_context *ctx)
 			inp_mousemode = nk_combo(ctx, mouse_modes, 3, inp_mousemode, 25, nk_vec2(ratio2big[1],200));
 			nk_tree_pop(ctx);
 		}
-
 		if (nk_tree_push(ctx, NK_TREE_TAB, "Video", NK_MAXIMIZED))
 		{
 			nk_layout_row(ctx, NK_STATIC, 25, 1, ratio1);
@@ -143,6 +142,48 @@ static void retro_run_gui(struct nk_context *ctx)
 				av.timing.fps = prop_fps;
 				av.timing.sample_rate = prop_sample_rate;
 			}
+		}
+		if (nk_tree_push(ctx, NK_TREE_TAB, "Full Input State", NK_MINIMIZED))
+		{
+			nk_layout_row(ctx, NK_STATIC, 10, 2, ratio2small);
+			const char* jlbl[] = { "B", "Y", "SELECT", "START", "UP", "DOWN", "LEFT", "RIGHT", "A", "X", "L", "R", "L2", "R2", "L3", "R3" };
+			const char* mlbl[] = { "X", "Y", "LEFT", "RIGHT", "WHEELUP", "WHEELDOWN", "MIDDLE", "HORIZ_WHEELUP", "HORIZ_WHEELDOWN", "BUTTON_4", "BUTTON_5" };
+			const char* klbl[] = { "UNKNOWN", "", "", "", "", "", "", "", "BACKSPACE", "TAB", "", "", "CLEAR", "RETURN", "", "", "", "", "", "PAUSE", "", "", "", "", "", "", "", "ESCAPE", "", "", "", "", "SPACE", "EXCLAIM", "QUOTEDBL", "HASH", "DOLLAR", "", "AMPERSAND", "QUOTE", "LEFTPAREN", "RIGHTPAREN", "ASTERISK", "PLUS", "COMMA", "MINUS", "PERIOD", "SLASH", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "COLON", "SEMICOLON", "LESS", "EQUALS", "GREATER", "QUESTION", "AT", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "LEFTBRACKET", "BACKSLASH", "RIGHTBRACKET", "CARET", "UNDERSCORE", "BACKQUOTE", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "LEFTBRACE", "BAR", "RIGHTBRACE", "TILDE", "DELETE", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "KP0", "KP1", "KP2", "KP3", "KP4", "KP5", "KP6", "KP7", "KP8", "KP9", "KP_PERIOD", "KP_DIVIDE", "KP_MULTIPLY", "KP_MINUS", "KP_PLUS", "KP_ENTER", "KP_EQUALS", "UP", "DOWN", "RIGHT", "LEFT", "INSERT", "HOME", "END", "PAGEUP", "PAGEDOWN", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F13", "F14", "F15", "", "", "", "NUMLOCK", "CAPSLOCK", "SCROLLOCK", "RSHIFT", "LSHIFT", "RCTRL", "LCTRL", "RALT", "LALT", "RMETA", "LMETA", "LSUPER", "RSUPER", "MODE", "COMPOSE", "HELP", "PRINT", "SYSREQ", "BREAK", "MENU", "POWER", "EURO", "UNDO", "OEM_102", "BROWSER_BACK", "BROWSER_FORWARD", "BROWSER_REFRESH", "BROWSER_STOP", "BROWSER_SEARCH", "BROWSER_FAVORITES", "BROWSER_HOME", "VOLUME_MUTE", "VOLUME_DOWN", "VOLUME_UP", "MEDIA_NEXT", "MEDIA_PREV", "MEDIA_STOP", "MEDIA_PLAY_PAUSE", "LAUNCH_MAIL", "LAUNCH_MEDIA", "LAUNCH_APP1", "LAUNCH_APP2" };
+			const char* llbl[] = { "X", "Y", "TRIGGER", "AUX_A", "AUX_B", "PAUSE", "START", "SELECT", "AUX_C", "DPAD_UP", "DPAD_DOWN", "DPAD_LEFT", "DPAD_RIGHT", "SCREEN_X", "SCREEN_Y", "IS_OFFSCREEN", "RELOAD" };
+			const char* plbl[] = { "X", "Y", "PRESSED", "COUNT" };
+			const char* analog_index_lbl[] = { "Left", "Right", "Button" };
+			const char*  device_names[]     = { NULL, "Joypad", "Mouse", "Keyboard", "Lightgun" };
+			const char** device_labels[]    = { NULL, jlbl, mlbl, klbl, llbl }; 
+			const int    device_lastport[]  = { 0, 3, 0, 0, 0, 3, 0 };
+			const int    device_lastindex[] = { 0, 0, 0, 0, 0, RETRO_DEVICE_INDEX_ANALOG_BUTTON, 9 };
+			const int    device_lastid[]    = { 0, RETRO_DEVICE_ID_JOYPAD_R3, RETRO_DEVICE_ID_MOUSE_BUTTON_5, RETROK_LAUNCH_APP2, RETRO_DEVICE_ID_LIGHTGUN_RELOAD, RETRO_DEVICE_ID_ANALOG_Y, RETRO_DEVICE_ID_POINTER_COUNT };
+			static unsigned char seen_bits[96];
+			for (int check_num = 0, device = RETRO_DEVICE_JOYPAD; device <= RETRO_DEVICE_POINTER; device++)
+				for (int port = 0; port <= device_lastport[device]; port++)
+					for (int index = 0; index <= device_lastindex[device]; index++)
+						for (int id = 0, lastid = ((device == RETRO_DEVICE_ANALOG && index == RETRO_DEVICE_INDEX_ANALOG_BUTTON) ? RETRO_DEVICE_ID_JOYPAD_R3 : device_lastid[device]); id <= lastid; id++)
+						{
+							int bit = check_num++, byte = (bit >> 3), mask = (1 << (bit & 7));
+							NK_ASSERT(byte < sizeof(seen_bits));
+							int seen = (seen_bits[byte] & mask);
+							int val = input_state_cb(port, device, index, id);
+							if (!val && !seen) continue;
+							if (!seen) seen_bits[byte] |= mask;
+							
+							if (device == RETRO_DEVICE_ANALOG)
+								nk_labelf(ctx, NK_TEXT_LEFT, "Port %d Analog %s %s", port, analog_index_lbl[index], (index != RETRO_DEVICE_INDEX_ANALOG_BUTTON ? llbl : jlbl)[id]);
+							else if (device == RETRO_DEVICE_POINTER)
+								nk_labelf(ctx, NK_TEXT_LEFT, "Pointer %d %s", index, plbl[id]);
+							else if (device_lastport[device])
+								nk_labelf(ctx, NK_TEXT_LEFT, "Port %d %s %s", port, device_names[device], device_labels[device][id]);
+							else
+								nk_labelf(ctx, NK_TEXT_LEFT, "%s %s", device_names[device], device_labels[device][id]);
+							nk_labelf(ctx, NK_TEXT_RIGHT, "%d", val);
+						}
+			nk_layout_row(ctx, NK_STATIC, 25, 1, ratio1);
+			if (nk_button_label(ctx, "Clear"))
+				memset(seen_bits, 0, sizeof(seen_bits));
+			nk_tree_pop(ctx);
 		}
 	}
 	nk_end(ctx);
@@ -276,6 +317,16 @@ void retro_init(void) // #3
 		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,    "Up" },
 		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,  "Down" },
 		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "Right" },
+		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L, "Mouse Left Click" },
+		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R, "Mouse Right Click" },
+		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2, "Mouse Slow" },
+		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2, "Mouse Fast" },
+		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y, "Mouse Left Click" },
+		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X, "Mouse Right Click" },
+		{ 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT,  RETRO_DEVICE_ID_ANALOG_X, "Mouse Horizontal L" },
+		{ 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT,  RETRO_DEVICE_ID_ANALOG_Y, "Mouse Vertical L" },
+		{ 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X, "Mouse Horizontal R" },
+		{ 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_Y, "Mouse Vertical R" },
 		{ 0 },
 	};
 	environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
@@ -397,12 +448,35 @@ static void retro_run_input(struct nk_context* ctx)
 		}
 		else if (inp_mousemode == MOUSEMODE_RELATIVE)
 		{
+			int jl = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT );
+			int ju = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP   );
+			int jd = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN );
+			int jr = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT);
+			int jlx = input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT,  RETRO_DEVICE_ID_ANALOG_X);
+			int jly = input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT,  RETRO_DEVICE_ID_ANALOG_Y);
+			int jrx = input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X);
+			int jry = input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_Y);
+			int mouse_slow = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2);
+			int mouse_fast = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2);
+			mrelx += (abs(jlx) > 4000 ? jlx / 3000 : 0) + (abs(jrx) > 4000 ? jrx / 3000 : 0) + (jl ? -5 : 0) + (jr ? 5 : 0);
+			mrely += (abs(jly) > 4000 ? jly / 3000 : 0) + (abs(jry) > 4000 ? jry / 3000 : 0) + (ju ? -5 : 0) + (jd ? 5 : 0);
+			if (mouse_slow) { mrelx /= 2; mrely /= 2; }
+			if (mouse_fast) { mrelx *= 3; mrely *= 3; }
 			mposx += mrelx;
 			mposy += mrely;
 		}
-		nk_input_button(ctx, NK_BUTTON_LEFT,   mposx, mposy, (input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_LEFT)   ? 1 : 0));
-		nk_input_button(ctx, NK_BUTTON_MIDDLE, mposx, mposy, (input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_MIDDLE) ? 1 : 0));
-		nk_input_button(ctx, NK_BUTTON_RIGHT , mposx, mposy, (input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_RIGHT)  ? 1 : 0));
+		int mouse_buttons[3] = {
+			(int)(input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_LEFT)
+			||    input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L)
+			||    input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y)),
+			(int)(input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_MIDDLE) != 0),
+			(int)(input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_RIGHT)
+			||    input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R)
+			||    input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X)),
+		};
+		nk_input_button(ctx, NK_BUTTON_LEFT,   mposx, mposy, mouse_buttons[0]);
+		nk_input_button(ctx, NK_BUTTON_MIDDLE, mposx, mposy, mouse_buttons[1]);
+		nk_input_button(ctx, NK_BUTTON_RIGHT , mposx, mposy, mouse_buttons[2]);
 	}
 
 	nk_input_motion(ctx, mposx, mposy);
