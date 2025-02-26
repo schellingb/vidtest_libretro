@@ -1048,7 +1048,7 @@ NK_API void nk_retro_shutdown(void);
 NK_API nk_retro_Font* nk_retrofont_create(const char *name, int size);
 NK_API void nk_retrofont_del(nk_retro_Font *font);
 NK_API void nk_retro_set_font(nk_retro_Font *font);
-NK_API struct nk_retro_event* nk_retro_event_ptr();
+NK_API struct nk_retro_event* nk_retro_event_ptr(void);
 #endif
 /*
  * ==============================================================
@@ -5341,6 +5341,7 @@ int ellipseRGBA(RSDL_Surface * dst, Sint16 x, Sint16 y, Sint16 rx, Sint16 ry, Ui
 /* Windows targets do not have lrint, so provide a local inline version */
 #if defined(_MSC_VER)
 /* Detect 64bit and use intrinsic version */
+#define lrint(d) nuklear_lrint(d)
 #ifdef _M_X64
 #include <emmintrin.h>
 static __forceinline long 
